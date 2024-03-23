@@ -2,9 +2,8 @@ package main
 
 import (
 	"fmt"
-	"log"
-
 	"github.com/songgao/water"
+	"log"
 )
 
 func readBytes(packetChan chan []byte, ifce *water.Interface) error {
@@ -67,15 +66,34 @@ func ipParsing(packet []byte) map[string]interface{} {
 }
 
 func packetPrint(packet []byte) {
-
 	ipHeader := ipParsing(packet)
-	log.Println("IP header : ")
-	for key, value := range ipHeader {
-		log.Printf("%s: %v\n", key, value)
-		log.Println("debug statment")
+	version := ipHeader["Version"].(uint8)
+	if version != 4 {
+		fmt.Println("wrong version")
+		return
 	}
-
-	if len(packet) > 20 {
-		log.Printf("Additional Data: %s", string(packet[20:]))
+	keysInOrder := []string{
+		"Version",
+		"Length",
+		"TOS",
+		"TotalLen",
+		"ID",
+		"Flags",
+		"FragOff",
+		"TTL",
+		"Protocol",
+		"Checksum",
+		"SrcIP",
+		"DstIP",
 	}
+	fmt.Println("------------------------------------")
+	log.Println("New Packet")
+	for _, key := range keysInOrder {
+		value, ok := ipHeader[key]
+		if !ok {
+			continue
+		}
+		fmt.Printf("%s: %v\n", key, value)
+	}
+	fmt.Println("------------------------------------")
 }
