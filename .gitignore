@@ -1,0 +1,10 @@
+# Ignore compiled files
+*.o
+*.exe
+*.dll
+*.so
+*.dylib
+
+
+# Ignore dependency directories
+./go.sum
