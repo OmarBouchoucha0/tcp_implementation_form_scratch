@@ -41,7 +41,7 @@ func main() {
 			}
 			os.Exit(0)
 		case packet := <-packetChan:
-			packetPrint(packet)
+			printTcpPacket(packet)
 		}
 	}
 }
