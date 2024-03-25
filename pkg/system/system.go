@@ -1,4 +1,4 @@
-package main
+package system
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func keyBoardInterrupt(done chan bool, sigChan chan os.Signal) {
+func KeyBoardInterrupt(done chan bool, sigChan chan os.Signal) {
 	<-sigChan
 	fmt.Println("")
 	log.Println("Received interrupt signal. Cleaning up...")

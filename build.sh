@@ -1,7 +1,6 @@
 #!/bin/sh
 
-input=./cmd/*.go
+main=./main/*.go
 output=main.o
 
-go build -o $output $input
-
+go build -o $output $main 

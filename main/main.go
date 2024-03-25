@@ -1,6 +1,9 @@
 package main
 
 import (
+	"github.com/OmarBouchoucha0/tcp_implementation_from_scratch/pkg/ip"
+	"github.com/OmarBouchoucha0/tcp_implementation_from_scratch/pkg/system"
+	"github.com/OmarBouchoucha0/tcp_implementation_from_scratch/pkg/tcp"
 	"github.com/songgao/water"
 	"log"
 	"os"
@@ -13,7 +16,7 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	done := make(chan bool)
-	go keyBoardInterrupt(done, sigChan)
+	go system.KeyBoardInterrupt(done, sigChan)
 	ifce, err := water.New(water.Config{
 		DeviceType: water.TUN,
 	})
@@ -27,7 +30,7 @@ func main() {
 
 	for {
 		go func() {
-			err := readBytes(packetChan, ifce)
+			err := ip.ReadBytes(packetChan, ifce)
 			if err != nil {
 				log.Println("Error reading bytes:", err)
 			}
@@ -41,7 +44,7 @@ func main() {
 			}
 			os.Exit(0)
 		case packet := <-packetChan:
-			printTcpPacket(packet)
+			tcp.PrintTcpPacket(packet)
 		}
 	}
 }

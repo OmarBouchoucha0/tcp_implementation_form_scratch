@@ -1,4 +1,4 @@
-package main
+package ip
 
 import (
 	"errors"
@@ -8,6 +8,23 @@ import (
 )
 
 type IPHeader struct {
+	/*
+	    0                   1                   2                   3
+	    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	   |Version|  IHL  |Type of Service|          Total Length         |
+	   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	   |         Identification        |Flags|      Fragment Offset    |
+	   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	   |  Time to Live |    Protocol   |         Header Checksum       |
+	   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	   |                       Source Address                          |
+	   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	   |                    Destination Address                        |
+	   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	   |                    Options                    |    Padding    |
+	   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*/
 	Version  uint8
 	Length   uint8
 	TOS      uint8
@@ -24,7 +41,7 @@ type IPHeader struct {
 	Padding  []byte
 }
 
-func readBytes(packetChan chan []byte, ifce *water.Interface) error {
+func ReadBytes(packetChan chan []byte, ifce *water.Interface) error {
 	packet := make([]byte, 2000)
 	n, err := ifce.Read(packet)
 	if err != nil {
@@ -34,15 +51,15 @@ func readBytes(packetChan chan []byte, ifce *water.Interface) error {
 	return nil
 }
 
-func validIpPacket(packet []byte) error {
+func ValidIpPacket(packet []byte) error {
 	if len(packet) < 20 {
 		return errors.New("not a valid Ip Packet")
 	}
 	return nil
 }
 
-func parsingIpPacket(packet []byte) (IPHeader, error) {
-	err := validIpPacket(packet)
+func ParsingIpPacket(packet []byte) (IPHeader, error) {
+	err := ValidIpPacket(packet)
 	if err != nil {
 		return IPHeader{}, err
 	}
@@ -60,17 +77,15 @@ func parsingIpPacket(packet []byte) (IPHeader, error) {
 		SrcIP:    [4]byte{packet[12], packet[13], packet[14], packet[15]},
 		DstIP:    [4]byte{packet[16], packet[17], packet[18], packet[19]},
 	}
-	/*
-		if uint8(ipHeader.Length) > 5 {
-			ipHeader.Options = packet[20 : uint8(packet[0]&0x0f)*8]
-			ipHeader.Padding = packet[uint8(packet[0]&0x0f)*8 : uint16(packet[2])<<8|uint16(packet[3])]
-		}
-	*/
+	if uint8(ipHeader.Length) > 5 {
+		ipHeader.Options = packet[20 : uint8(packet[0]&0x0f)*8]
+		ipHeader.Padding = packet[uint8(packet[0]&0x0f)*8 : uint16(packet[2])<<8|uint16(packet[3])]
+	}
 	return ipHeader, nil
 }
 
-func printIpPacket(packet []byte) {
-	ipHeader, err := parsingIpPacket(packet)
+func PrintIpPacket(packet []byte) {
+	ipHeader, err := ParsingIpPacket(packet)
 	if err != nil {
 		log.Println(err)
 		return
