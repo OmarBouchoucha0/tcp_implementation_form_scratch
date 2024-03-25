@@ -40,6 +40,7 @@ type TCPHeader struct {
 	WindowSize           uint16
 	Checksum             uint16
 	UrgentPointer        uint16
+	data                 []byte
 }
 
 type Flags struct {
@@ -59,58 +60,6 @@ type Flags struct {
 	URG bool
 }
 
-type SendSequence struct {
-	/*
-	   Send Sequence Variables
-
-	     SND.UNA - send unacknowledged
-	     SND.NXT - send next
-	     SND.WND - send window
-	     SND.UP  - send urgent pointer
-	     SND.WL1 - segment sequence number used for last window update
-	     SND.WL2 - segment acknowledgment number used for last window
-	               update
-	     ISS     - initial send sequence number
-	*/
-	UNA uint16
-	NXT uint16
-	WND uint16
-	UP  bool
-	WL1 uint16
-	WL2 uint16
-	ISS uint16
-}
-
-type ReceiveSegment struct {
-	/*
-	   RCV.NXT - receive next
-	   RCV.WND - receive window
-	   RCV.UP  - receive urgent pointer
-	   IRS     - initial receive sequence number
-	*/
-	NXT uint16
-	WND uint16
-	UP  bool
-	IRS uint16
-}
-
-type CurrentSegment struct {
-	/*
-	   SEG.SEQ - segment sequence number
-	   SEG.ACK - segment acknowledgment number
-	   SEG.LEN - segment length
-	   SEG.WND - segment window
-	   SEG.UP  - segment urgent pointer
-	   SEG.PRC - segment precedence value
-	*/
-	SEQ uint16
-	ACK uint16
-	LEN uint16
-	WND uint16
-	UP  uint16
-	PRC uint16
-}
-
 func IsTcpPacket(ipHeader ip.IPHeader) bool {
 	version := ipHeader.Version
 	protocol := ipHeader.Protocol
@@ -118,6 +67,43 @@ func IsTcpPacket(ipHeader ip.IPHeader) bool {
 		return false
 	}
 	return true
+}
+func UnparseTcpPacket(tcpHeader TCPHeader) ([]byte, error) {
+	totalLength := 20 + len(tcpHeader.data)
+	packet := make([]byte, totalLength)
+	binary.BigEndian.PutUint16(packet[0:2], tcpHeader.SourcePort)
+	binary.BigEndian.PutUint16(packet[2:4], tcpHeader.DestinationPort)
+	binary.BigEndian.PutUint32(packet[4:8], tcpHeader.SequenceNumber)
+	binary.BigEndian.PutUint32(packet[8:12], tcpHeader.AcknowledgmentNumber)
+	packet[12] = tcpHeader.DataOffset << 4
+	packet[12] |= tcpHeader.Reserved
+	flags := uint16(0)
+	if tcpHeader.Flags.FIN {
+		flags |= 1 << 0
+	}
+	if tcpHeader.Flags.SYN {
+		flags |= 1 << 1
+	}
+	if tcpHeader.Flags.RST {
+		flags |= 1 << 2
+	}
+	if tcpHeader.Flags.PSH {
+		flags |= 1 << 3
+	}
+	if tcpHeader.Flags.ACK {
+		flags |= 1 << 4
+	}
+	if tcpHeader.Flags.URG {
+		flags |= 1 << 5
+	}
+	binary.BigEndian.PutUint16(packet[12:14], flags)
+	binary.BigEndian.PutUint16(packet[14:16], tcpHeader.WindowSize)
+	binary.BigEndian.PutUint16(packet[16:18], tcpHeader.Checksum)
+	binary.BigEndian.PutUint16(packet[18:20], tcpHeader.UrgentPointer)
+
+	copy(packet[20:], tcpHeader.data)
+
+	return packet, nil
 }
 
 func ParsingTcpPacket(packet []byte) (TCPHeader, error) {

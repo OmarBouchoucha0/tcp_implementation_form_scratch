@@ -45,9 +45,19 @@ func ReadBytes(packetChan chan []byte, ifce *water.Interface) error {
 	packet := make([]byte, 2000)
 	n, err := ifce.Read(packet)
 	if err != nil {
+		log.Printf("Coudnt Read Packet Stopped at Byte %v", n)
 		return err
 	}
-	packetChan <- packet[:n]
+	packetChan <- packet
+	return nil
+}
+
+func WriteBytes(packet []byte, ifce *water.Interface) error {
+	n, err := ifce.Write(packet)
+	if err != nil {
+		log.Printf("Coudnt Write Packet Stoped at Byte %v\n", n)
+		return err
+	}
 	return nil
 }
 
